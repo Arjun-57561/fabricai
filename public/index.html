@@ -91,10 +91,19 @@ nav{position:sticky;top:0;z-index:100;height:60px;background:rgba(5,5,10,.85);ba
 /* Shimmer */
 .shimmer{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Demo banner */
+.demo-banner{display:none;align-items:center;justify-content:center;gap:10px;background:rgba(245,158,11,.07);border-bottom:1px solid rgba(245,158,11,.2);padding:10px 24px;font-size:13px;color:var(--warning);position:relative;z-index:99}
+.demo-banner.visible{display:flex}
+.demo-banner strong{font-weight:600}
+.demo-banner a{color:var(--warning);text-decoration:underline;text-underline-offset:3px}
 /* Footer */
 footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color:var(--faint);font-size:13px;margin-top:80px;position:relative;z-index:1}
 footer a{color:var(--accent);text-decoration:none}
 footer p{margin-bottom:4px}
+/* Active tap states */
+.btn-primary:active{transform:scale(.97);opacity:.85}
+.nav-links a:active,.icon-btn:active{opacity:.7}
+.pill:active{transform:translateY(0) scale(.98)}
 /* Mobile */
 @media(max-width:768px){
   nav{padding:0 16px}
@@ -110,6 +119,9 @@ footer p{margin-bottom:4px}
 </style>
 </head>
 <body>
+<div class="demo-banner" id="demoBanner" role="alert">
+  ⚠ <strong>Demo Mode</strong> — predictions are deterministic placeholders. Set <code>HF_MODEL_REPO</code> in Vercel to enable real inference.
+</div>
 <nav>
   <a href="/" class="logo" aria-label="FabricAI home">
     <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -172,7 +184,7 @@ footer p{margin-bottom:4px}
   <!-- UPLOAD & INFERENCE -->
   <section class="section" id="infer">
     <h2 class="section-title">Upload &amp; Inspect</h2>
-    <p class="section-sub">Drop any fabric image — the model runs inference instantly in demo mode.</p>
+    <p class="section-sub">Drop any fabric image — EfficientNet-B0 classifies it as NORMAL or DEFECT.</p>
     <div class="two-col">
       <!-- LEFT: Upload -->
       <div>
@@ -222,11 +234,19 @@ async function loadModelInfo(){
     const d=await r.json();
     const badge=document.getElementById('statusBadge');
     const txt=document.getElementById('statusText');
-    if(!d.demo_mode){
+    const banner=document.getElementById('demoBanner');
+    if(d.demo_mode){
+      if(banner)banner.classList.add('visible');
+    } else {
       badge.className='status-badge live';
       txt.textContent='Live';
+      if(banner)banner.remove();
     }
-  }catch(e){}
+  }catch(e){
+    // If API fails, show demo banner by default
+    const banner=document.getElementById('demoBanner');
+    if(banner)banner.classList.add('visible');
+  }
 }
 
 // ── Load stats for hero pills

@@ -1,5 +1,54 @@
-.vercel/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Env / secrets
 .env
+.env.local
+.env.*.local
+
+# HuggingFace cache
+.cache/
+hf_cache/
+/tmp/
+
+# Model weights (large files — store in HuggingFace Hub)
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Dataset (do not commit)
+textile_dataset/
+
+# Vercel
+.vercel/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+wandb/
+runs/
+
+# Dev tools (keep in repo but mark clearly)
+# dev_server.py is intentionally kept

@@ -69,6 +69,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
 footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color:var(--faint);font-size:13px;margin-top:60px;position:relative;z-index:1}
 footer a{color:var(--accent);text-decoration:none}
 footer p{margin-bottom:4px}
+/* Demo banner */
+.demo-banner{display:none;align-items:center;justify-content:center;gap:10px;background:rgba(245,158,11,.07);border-bottom:1px solid rgba(245,158,11,.2);padding:10px 24px;font-size:13px;color:var(--warning);position:relative;z-index:99}
+.demo-banner.visible{display:flex}
+.demo-banner strong{font-weight:600}
+/* Active tap states */
+.nav-links a:active,.icon-btn:active{opacity:.7}
 @media(max-width:768px){
   nav{padding:0 16px}.nav-links{display:none}
   .two-col{grid-template-columns:1fr}
@@ -78,6 +84,9 @@ footer p{margin-bottom:4px}
 </style>
 </head>
 <body>
+<div class="demo-banner" id="demoBanner" role="alert">
+  ⚠ <strong>Demo Mode</strong> — predictions use deterministic placeholders. Set <code>HF_MODEL_REPO</code> in Vercel to enable real inference.
+</div>
 <nav>
   <a href="/" class="logo" aria-label="FabricAI home">
     <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
@@ -251,8 +260,20 @@ function rarityBadge(train){
 async function loadData(){
   try{
     const r=await fetch('/api/model-info');
-    if(r.ok){const d=await r.json();if(!d.demo_mode){const b=document.getElementById('statusBadge');b.className='status-badge live';document.getElementById('statusText').textContent='Live';}}
-  }catch(e){}
+    if(r.ok){const d=await r.json();
+      const banner=document.getElementById('demoBanner');
+      if(d.demo_mode){
+        if(banner)banner.classList.add('visible');
+      } else {
+        const b=document.getElementById('statusBadge');b.className='status-badge live';
+        document.getElementById('statusText').textContent='Live';
+        if(banner)banner.remove();
+      }
+    }
+  }catch(e){
+    const banner=document.getElementById('demoBanner');
+    if(banner)banner.classList.add('visible');
+  }
 
   try{
     const r=await fetch('/api/project-stats');
