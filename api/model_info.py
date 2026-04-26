@@ -29,5 +29,13 @@ def model_info():
         "learning_rate": "3e-4",
         "hardware": "NVIDIA RTX 3050 Laptop GPU (4GB VRAM)",
         "framework": "PyTorch 2.2.2",
-        "groq_enabled": bool(os.environ.get("GROQ_API_KEY", ""))
+        "groq_enabled": bool(os.environ.get("GROQ_API_KEY", "")),
+        "metrics": {
+            "val_acc": 83.19,
+            "val_roc_auc": 0.9197,
+            "test_acc": 71.43,
+            "test_roc_auc": 0.5893,
+            "defect_recall": 94.44,
+            "test_note": "Test set covers 4 of 14 defect categories — distribution shift explains AUC gap from val to test."
+        }
     })
