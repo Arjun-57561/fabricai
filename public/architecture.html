@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FabricAI — Model Architecture</title>
+<meta name="description" content="EfficientNet-B0 classifier, WGAN-GP generator and DDPM diffusion model architecture details for FabricAI textile defect detection.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<style>
+:root{--bg:#05050a;--surface:rgba(20,20,35,.5);--surface-2:rgba(30,30,50,.7);--border:rgba(255,255,255,.08);--border-hi:rgba(45,212,191,.35);--text:#f1f5f9;--muted:#94a3b8;--faint:#475569;--accent:#14b8a6;--accent-2:#0f766e;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--grad:linear-gradient(135deg,#2dd4bf,#0f766e)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(20,184,166,.12),transparent);pointer-events:none;z-index:0}
+nav{position:sticky;top:0;z-index:100;height:60px;background:rgba(5,5,10,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px}
+.logo-text{font-size:18px;font-weight:700;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:4px}
+.nav-links a{color:var(--muted);text-decoration:none;padding:6px 14px;border-radius:8px;font-size:14px;font-weight:500;transition:.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(255,255,255,.06)}
+.nav-links a.active{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.status-badge{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid}
+.status-badge.live{color:var(--success);border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08)}
+.status-badge.demo{color:var(--warning);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.icon-btn{width:36px;height:36px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.2s;text-decoration:none}
+.icon-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(20,184,166,.08)}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.page-hero{padding:60px 0 40px}
+.page-hero h1{font-size:clamp(28px,4vw,44px);font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.grad-text{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.page-hero p{color:var(--muted);font-size:15px}
+.section{padding:48px 0}
+.section-title{font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-.02em}
+.section-sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+/* ARCHITECTURE CARDS */
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.arch-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;overflow:hidden;transition:.3s}
+.arch-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
+.arch-card:hover{border-color:var(--border-hi);transform:translateY(-4px);box-shadow:0 16px 40px rgba(20,184,166,.1)}
+.arch-icon{width:44px;height:44px;border-radius:12px;background:rgba(20,184,166,.1);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:var(--accent)}
+.arch-card h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.arch-card .arch-type{font-size:12px;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:16px}
+.arch-detail{display:flex;flex-direction:column;gap:10px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:var(--muted)}
+.detail-val{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:12px;text-align:right}
+/* SAMPLES SECTION */
+.samples-note{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:var(--faint);line-height:1.6}
+.samples-note strong{color:var(--muted)}
+.samples-scroll{display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.samples-scroll::-webkit-scrollbar{height:4px}
+.samples-scroll::-webkit-scrollbar-track{background:transparent}
+.samples-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sample-item{flex:0 0 220px;height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface);position:relative;transition:.3s;cursor:pointer}
+.sample-item:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(20,184,166,.15);border-color:var(--border-hi)}
+.sample-item img{width:100%;height:100%;object-fit:cover;display:block}
+.sample-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:12px}
+/* ENV VARS TABLE */
+.env-table{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.env-table table{width:100%;border-collapse:collapse;font-size:13px}
+.env-table thead{background:var(--surface-2)}
+.env-table th{padding:14px 18px;text-align:left;font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.env-table td{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.04);font-family:'JetBrains Mono',monospace}
+.env-table tr:last-child td{border-bottom:none}
+.env-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-left:8px;font-family:'Outfit',sans-serif;font-weight:600}
+.env-required{background:rgba(20,184,166,.15);color:var(--accent)}
+.env-optional{background:rgba(100,116,139,.15);color:var(--muted)}
+.env-desc{font-family:'Outfit',sans-serif;color:var(--muted);font-size:13px}
+footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color:var(--faint);font-size:13px;margin-top:60px;position:relative;z-index:1}
+footer a{color:var(--accent);text-decoration:none}
+footer p{margin-bottom:4px}
+@media(max-width:900px){.three-col{grid-template-columns:1fr}}
+@media(max-width:768px){nav{padding:0 16px}.nav-links{display:none}}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo" aria-label="FabricAI home">
+    <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="12" height="12" rx="2" stroke="#2dd4bf" stroke-width="1.5"/>
+      <rect x="19" y="1" width="12" height="12" rx="2" stroke="#2dd4bf" stroke-width="1.5"/>
+      <rect x="1" y="19" width="12" height="12" rx="2" stroke="#0f766e" stroke-width="1.5"/>
+      <rect x="19" y="19" width="12" height="12" rx="2" stroke="#0f766e" stroke-width="1.5"/>
+      <line x1="13" y1="7" x2="19" y2="7" stroke="#2dd4bf" stroke-width="1.5"/>
+      <line x1="13" y1="25" x2="19" y2="25" stroke="#0f766e" stroke-width="1.5"/>
+      <line x1="7" y1="13" x2="7" y2="19" stroke="#2dd4bf" stroke-width="1.5"/>
+      <line x1="25" y1="13" x2="25" y2="19" stroke="#14b8a6" stroke-width="1.5"/>
+    </svg>
+    <span class="logo-text">FabricAI</span>
+  </a>
+  <div class="nav-links">
+    <a href="/">Inspect</a>
+    <a href="/analytics.html">Analytics</a>
+    <a href="/architecture.html" class="active">Architecture</a>
+  </div>
+  <div class="nav-right">
+    <span class="status-badge demo" id="statusBadge">
+      <span class="status-dot"></span>
+      <span id="statusText">Demo</span>
+    </span>
+    <a href="https://github.com" target="_blank" rel="noopener" class="icon-btn" aria-label="GitHub">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+    </a>
+  </div>
+</nav>
+
+<main>
+<div class="container">
+  <div class="page-hero" id="pageHero">
+    <h1>Model <span class="grad-text">Architecture</span></h1>
+    <p>Classifier · Generator · Diffusion — parameters, training setup, and simulation examples</p>
+  </div>
+
+  <!-- ARCHITECTURE CARDS -->
+  <section class="section" id="archSection">
+    <h2 class="section-title">Model Architecture</h2>
+    <p class="section-sub">Three models working together for robust defect detection</p>
+    <div class="three-col">
+      <!-- Classifier -->
+      <div class="arch-card" id="cardClassifier">
+        <div class="arch-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+          </svg>
+        </div>
+        <h3>Classifier</h3>
+        <div class="arch-type" id="classifierType">EfficientNet-B0</div>
+        <div class="arch-detail">
+          <div class="detail-row"><span class="detail-label">Parameters</span><span class="detail-val" id="clfParams">5.29M</span></div>
+          <div class="detail-row"><span class="detail-label">Pretrained</span><span class="detail-val">ImageNet-1k</span></div>
+          <div class="detail-row"><span class="detail-label">Input size</span><span class="detail-val" id="clfInput">256×256</span></div>
+          <div class="detail-row"><span class="detail-label">Loss</span><span class="detail-val" id="clfLoss">Focal Loss α=0.75</span></div>
+          <div class="detail-row"><span class="detail-label">Optimizer</span><span class="detail-val" id="clfOpt">AdamW</span></div>
+          <div class="detail-row"><span class="detail-label">Epochs</span><span class="detail-val" id="clfEpochs">40</span></div>
+          <div class="detail-row"><span class="detail-label">Batch size</span><span class="detail-val" id="clfBatch">64</span></div>
+          <div class="detail-row"><span class="detail-label">LR</span><span class="detail-val" id="clfLr">3e-4</span></div>
+        </div>
+      </div>
+      <!-- Generator -->
+      <div class="arch-card" id="cardGenerator">
+        <div class="arch-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <h3>Generator</h3>
+        <div class="arch-type">WGAN-GP</div>
+        <div class="arch-detail">
+          <div class="detail-row"><span class="detail-label">Parameters</span><span class="detail-val" id="genParams">13.3M</span></div>
+          <div class="detail-row"><span class="detail-label">Architecture</span><span class="detail-val">ConvTranspose + SA</span></div>
+          <div class="detail-row"><span class="detail-label">Critic params</span><span class="detail-val" id="critParams">11.3M</span></div>
+          <div class="detail-row"><span class="detail-label">Total GAN</span><span class="detail-val" id="ganTotal">24.6M</span></div>
+          <div class="detail-row"><span class="detail-label">Latent dim</span><span class="detail-val">128</span></div>
+          <div class="detail-row"><span class="detail-label">Epochs</span><span class="detail-val" id="ganEpochs">500</span></div>
+          <div class="detail-row"><span class="detail-label">Output</span><span class="detail-val">256×256 RGB</span></div>
+          <div class="detail-row"><span class="detail-label">Synthetic imgs</span><span class="detail-val">300</span></div>
+        </div>
+      </div>
+      <!-- Diffusion -->
+      <div class="arch-card" id="cardDiffusion">
+        <div class="arch-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+        </div>
+        <h3>Diffusion</h3>
+        <div class="arch-type">DDPM U-Net</div>
+        <div class="arch-detail">
+          <div class="detail-row"><span class="detail-label">Parameters</span><span class="detail-val">~65M</span></div>
+          <div class="detail-row"><span class="detail-label">Architecture</span><span class="detail-val">U-Net + Attention</span></div>
+          <div class="detail-row"><span class="detail-label">Epochs</span><span class="detail-val">300</span></div>
+          <div class="detail-row"><span class="detail-label">Synthetic imgs</span><span class="detail-val">36</span></div>
+          <div class="detail-row"><span class="detail-label">Constraint</span><span class="detail-val">4GB VRAM</span></div>
+          <div class="detail-row"><span class="detail-label">Hardware</span><span class="detail-val" id="hwLabel">RTX 3050</span></div>
+          <div class="detail-row"><span class="detail-label">Framework</span><span class="detail-val" id="fwLabel">PyTorch 2.2.2</span></div>
+          <div class="detail-row"><span class="detail-label">Scheduler</span><span class="detail-val">CosineAnnealingLR</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIMULATION SAMPLES -->
+  <section class="section" id="samplesSection">
+    <h2 class="section-title">Defect Simulation Examples</h2>
+    <div class="samples-note">
+      <strong>Note:</strong> These are procedurally generated texture visualizations — not actual WGAN-GP output. Real synthetic samples (300 WGAN + 36 DDPM images) are stored in <code>textile_dataset/synthetic_defects/</code>.
+    </div>
+    <div class="samples-scroll" id="samplesScroll" role="list" aria-label="Synthetic defect examples">
+      <!-- Injected by JS -->
+    </div>
+  </section>
+
+  <!-- ENV VARS -->
+  <section class="section" id="envSection">
+    <h2 class="section-title">Environment Variables</h2>
+    <p class="section-sub">Configure these in Vercel Dashboard → Settings → Environment Variables</p>
+    <div class="env-table">
+      <table aria-label="Environment variables">
+        <thead>
+          <tr><th>Variable</th><th>Example Value</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>HF_MODEL_REPO<span class="env-tag env-required">Required for live</span></td>
+            <td>your-user/fabricai-weights</td>
+            <td class="env-desc">HuggingFace repo containing best_model_augmented.pth</td>
+          </tr>
+          <tr>
+            <td>HF_TOKEN<span class="env-tag env-optional">Optional</span></td>
+            <td>hf_xxx...</td>
+            <td class="env-desc">Only needed for private HuggingFace repos</td>
+          </tr>
+          <tr>
+            <td>GROQ_API_KEY<span class="env-tag env-optional">Optional</span></td>
+            <td>gsk_xxx...</td>
+            <td class="env-desc">Enables Groq Llama 3.1 AI analysis on inference results</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>FabricAI · EfficientNet-B0 + WGAN-GP · PyTorch 2.2 · <a href="https://vercel.com" target="_blank">Vercel</a></p>
+    <p>Trained on RTX 3050 · Deployed on Vercel Serverless · <a href="https://github.com" target="_blank">GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+// Load synthetic samples
+const SEEDS=[7,17,31,47,59,73,89,103];
+function buildSamples(){
+  const wrap=document.getElementById('samplesScroll');
+  if(!wrap)return;
+  wrap.innerHTML=SEEDS.map(s=>`
+    <div class="sample-item" role="listitem" aria-label="Synthetic defect sample seed ${s}">
+      <img src="/api/synthetic-sample?seed=${s}" alt="Procedural defect texture seed ${s}"
+        onerror="this.style.display='none';this.parentNode.querySelector('.sample-fallback').style.display='flex'">
+      <div class="sample-fallback" style="display:none">Sample unavailable</div>
+    </div>`).join('');
+}
+
+// Load model info
+async function loadModelInfo(){
+  try{
+    const r=await fetch('/api/model-info');
+    if(!r.ok)return;
+    const d=await r.json();
+    if(!d.demo_mode){
+      const b=document.getElementById('statusBadge');
+      b.className='status-badge live';
+      document.getElementById('statusText').textContent='Live';
+    }
+    if(d.classifier_params){
+      document.getElementById('clfParams').textContent=(d.classifier_params/1e6).toFixed(2)+'M';
+    }
+    if(d.generator_params){
+      document.getElementById('genParams').textContent=(d.generator_params/1e6).toFixed(1)+'M';
+    }
+    if(d.critic_params){
+      document.getElementById('critParams').textContent=(d.critic_params/1e6).toFixed(1)+'M';
+    }
+    if(d.total_gan_params){
+      document.getElementById('ganTotal').textContent=(d.total_gan_params/1e6).toFixed(1)+'M';
+    }
+    if(d.hardware)document.getElementById('hwLabel').textContent=d.hardware.replace('NVIDIA ','').replace(' Laptop GPU','');
+    if(d.framework)document.getElementById('fwLabel').textContent=d.framework;
+    if(d.gan_epochs)document.getElementById('ganEpochs').textContent=d.gan_epochs;
+    if(d.epochs)document.getElementById('clfEpochs').textContent=d.epochs;
+    if(d.batch_size)document.getElementById('clfBatch').textContent=d.batch_size;
+    if(d.learning_rate)document.getElementById('clfLr').textContent=d.learning_rate;
+    if(d.input_size)document.getElementById('clfInput').textContent=d.input_size;
+    if(d.backbone)document.getElementById('classifierType').textContent=d.backbone;
+  }catch(e){}
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  buildSamples();
+  loadModelInfo();
+  window.addEventListener('load',()=>{
+    if(!window.gsap)return;
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.from('#pageHero',{y:30,opacity:0,duration:.6,ease:'power3.out'});
+    gsap.from('#cardClassifier,#cardGenerator,#cardDiffusion',{
+      y:40,opacity:0,stagger:.15,duration:.6,ease:'power3.out',
+      scrollTrigger:{trigger:'#archSection',start:'top 80%'}
+    });
+    gsap.from('#samplesSection',{y:30,opacity:0,duration:.6,scrollTrigger:{trigger:'#samplesSection',start:'top 85%'}});
+    gsap.from('.sample-item',{scale:.9,opacity:0,stagger:.08,duration:.4,scrollTrigger:{trigger:'#samplesScroll',start:'top 90%'}});
+    gsap.from('#envSection',{y:30,opacity:0,duration:.6,scrollTrigger:{trigger:'#envSection',start:'top 85%'}});
+  });
+});
+</script>
+</body>
+</html>

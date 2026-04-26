@@ -1,1108 +1,387 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FabricAI — Textile Defect Detection</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #05050a;
-      --surface: rgba(20, 20, 35, 0.4);
-      --surface-2: rgba(30, 30, 50, 0.6);
-      --border: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(45, 212, 191, 0.3);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #14b8a6;
-      --accent-gradient: linear-gradient(135deg, #2dd4bf, #0f766e);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --info: #3b82f6;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      background-color: var(--bg);
-      background-image: 
-        radial-gradient(circle at 15% 50%, rgba(45, 212, 191, 0.12), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(15, 118, 110, 0.12), transparent 25%);
-      background-attachment: fixed;
-      color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 2rem;
-      position: relative;
-    }
-
-    /* Glassmorphism utility */
-    .glass {
-      background: var(--surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    }
-    
-    .glass:hover {
-      border-color: var(--border-glow);
-      box-shadow: 0 8px 32px 0 rgba(45, 212, 191, 0.15);
-      transition: all 0.3s ease;
-    }
-
-    /* Navbar */
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 0;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 4rem;
-    }
-    
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .logo-icon {
-      width: 28px;
-      height: 28px;
-      background: var(--accent-gradient);
-      border-radius: 8px;
-      position: relative;
-    }
-    .logo-icon::after {
-      content: '';
-      position: absolute;
-      inset: 2px;
-      background: var(--bg);
-      border-radius: 6px;
-    }
-    .logo-icon::before {
-      content: '';
-      position: absolute;
-      inset: 6px;
-      background: var(--accent-gradient);
-      border-radius: 3px;
-    }
-    
-    .status-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      background: rgba(255,255,255,0.03);
-      padding: 0.5rem 1rem;
-      border-radius: 99px;
-      border: 1px solid var(--border);
-      backdrop-filter: blur(8px);
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--text-muted);
-    }
-    .status-dot.live { background: var(--success); box-shadow: 0 0 12px var(--success); }
-    .status-dot.demo { background: var(--warning); box-shadow: 0 0 12px var(--warning); }
-
-    /* Hero */
-    header {
-      padding: 2rem 0 6rem;
-      text-align: center;
-    }
-
-    .hero-title {
-      font-size: 4.5rem;
-      line-height: 1.1;
-      margin-bottom: 1.5rem;
-      font-weight: 700;
-    }
-    .hero-title span {
-      display: inline-block;
-      margin-right: 0.2em;
-    }
-
-    .hero-subtitle {
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 3rem;
-      font-weight: 300;
-    }
-
-    .hero-stats {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .stat-pill {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      padding: 1rem 2rem;
-      border-radius: 99px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    }
-
-    .stat-pill span.label {
-      font-size: 0.75rem;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 0.5rem;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-    }
-
-    /* Section Titles */
-    .section-title {
-      font-size: 2.25rem;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-    }
-
-    /* Upload Panel */
-    .upload-section {
-      margin-bottom: 6rem;
-    }
-
-    .upload-card {
-      padding: 2.5rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3rem;
-    }
-
-    @media (max-width: 768px) {
-      .upload-card { grid-template-columns: 1fr; }
-    }
-
-    .dropzone {
-      border: 2px dashed rgba(255,255,255,0.2);
-      border-radius: 16px;
-      height: 320px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-      background: rgba(0,0,0,0.2);
-    }
-
-    .dropzone:hover {
-      border-color: var(--accent);
-      background: rgba(20, 184, 166, 0.05);
-    }
-
-    .dropzone-inner {
-      text-align: center;
-      pointer-events: none;
-    }
-
-    .dropzone-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      opacity: 0.7;
-    }
-
-    #preview-image {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-      z-index: 5;
-    }
-
-    .upload-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    button {
-      background: var(--accent-gradient);
-      color: #fff;
-      border: none;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      font-size: 1.125rem;
-      box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4);
-    }
-    
-    button:disabled {
-      background: var(--surface-2);
-      color: var(--text-muted);
-      box-shadow: none;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(20, 184, 166, 0.6);
-    }
-
-    .result-panel {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    .result-panel.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .verdict {
-      font-size: 2.5rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 1.5rem;
-      letter-spacing: 0.05em;
-    }
-
-    .verdict.defect { color: var(--danger); text-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
-    .verdict.normal { color: var(--success); text-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-
-    .confidence-bar-container {
-      background: rgba(255,255,255,0.05);
-      height: 12px;
-      border-radius: 6px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .confidence-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--accent-gradient);
-      border-radius: 6px;
-      box-shadow: 0 0 10px rgba(45, 212, 191, 0.8);
-    }
-
-    .result-details {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .demo-badge {
-      display: none;
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--warning);
-      padding: 0.75rem;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      text-align: center;
-      margin-top: 1.5rem;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-
-    /* Training Chart Section */
-    .charts-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2.5rem;
-      margin-bottom: 6rem;
-    }
-
-    @media (max-width: 768px) {
-      .charts-container { grid-template-columns: 1fr; }
-    }
-
-    .chart-card {
-      padding: 2rem;
-      height: 350px;
-      position: relative;
-    }
-
-    .chart-title {
-      font-size: 1.125rem;
-      color: var(--text);
-      font-weight: 500;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .chart-title::before {
-      content: '';
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .chart-svg {
-      width: 100%;
-      height: calc(100% - 3rem);
-      overflow: visible;
-    }
-
-    /* Metrics Cards */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-bottom: 6rem;
-    }
-
-    .metric-card {
-      padding: 2rem;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .metric-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 4px;
-      background: var(--accent-gradient);
-    }
-
-    .metric-label {
-      font-size: 1rem;
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      font-weight: 500;
-    }
-
-    .metric-value {
-      font-size: 3.5rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 300;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      line-height: 1;
-    }
-
-    .metric-delta {
-      font-size: 1rem;
-      color: var(--success);
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      background: rgba(16, 185, 129, 0.15);
-      padding: 0.25rem 0.75rem;
-      border-radius: 99px;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    /* Defect Table */
-    .table-container {
-      border-radius: 20px;
-      overflow: hidden;
-      margin-bottom: 6rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
-    th, td {
-      padding: 1.25rem 2rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      background: rgba(0,0,0,0.2);
-    }
-
-    tbody tr {
-      transition: background 0.2s;
-    }
-
-    tbody tr:hover {
-      background: rgba(255,255,255,0.03);
-    }
-
-    .rarity-badge {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.75rem;
-      border-radius: 99px;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-    }
-
-    .rarity-singleton { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .rarity-rare { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .rarity-limited { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
-
-    /* Synthetic Samples */
-    .samples-strip {
-      display: flex;
-      gap: 1.5rem;
-      overflow-x: auto;
-      padding: 1rem 0 2rem;
-      margin-bottom: 6rem;
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent) rgba(255,255,255,0.05);
-    }
-
-    .samples-strip::-webkit-scrollbar { height: 8px; }
-    .samples-strip::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
-    .samples-strip::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
-
-    .sample-item {
-      flex: 0 0 240px;
-      height: 240px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: rgba(0,0,0,0.3);
-      overflow: hidden;
-      position: relative;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-    
-    .sample-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      border-color: var(--border-glow);
-    }
-    
-    .sample-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .sample-fallback {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%; height: 100%;
-      background: linear-gradient(135deg, #1e1e2e, #2d2d44);
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    /* Deploy Config Section */
-    .deploy-config {
-      display: none;
-      padding: 2.5rem;
-      margin-bottom: 4rem;
-      border: 1px dashed var(--warning);
-      background: rgba(245, 158, 11, 0.05);
-    }
-
-    .deploy-config h3 {
-      color: var(--warning);
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-    }
-
-    .code-block {
-      background: rgba(0,0,0,0.5);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 1.5rem;
-      border-radius: 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.875rem;
-      margin-bottom: 1.5rem;
-      white-space: pre;
-      overflow-x: auto;
-      color: #a78bfa;
-    }
-
-    .deploy-config a {
-      color: var(--bg);
-      background: var(--warning);
-      text-decoration: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      display: inline-block;
-      transition: opacity 0.2s;
-    }
-    .deploy-config a:hover { opacity: 0.9; }
-
-    footer {
-      text-align: center;
-      padding: 4rem 0;
-      border-top: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      margin-top: 2rem;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FabricAI — Textile Defect Detection</title>
+<meta name="description" content="EfficientNet-B0 + GAN-Augmented textile defect detection. 83% val accuracy, 94% defect recall.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<style>
+:root{--bg:#05050a;--surface:rgba(20,20,35,.5);--surface-2:rgba(30,30,50,.7);--border:rgba(255,255,255,.08);--border-hi:rgba(45,212,191,.35);--text:#f1f5f9;--muted:#94a3b8;--faint:#475569;--accent:#14b8a6;--accent-2:#0f766e;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--grad:linear-gradient(135deg,#2dd4bf,#0f766e)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(20,184,166,.12),transparent);pointer-events:none;z-index:0}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;height:60px;background:rgba(5,5,10,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px}
+.logo-text{font-size:18px;font-weight:700;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:4px}
+.nav-links a{color:var(--muted);text-decoration:none;padding:6px 14px;border-radius:8px;font-size:14px;font-weight:500;transition:.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(255,255,255,.06)}
+.nav-links a.active{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.status-badge{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid;transition:.3s}
+.status-badge.live{color:var(--success);border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08)}
+.status-badge.demo{color:var(--warning);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.icon-btn{width:36px;height:36px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.2s;text-decoration:none}
+.icon-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(20,184,166,.08)}
+/* HERO */
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.hero{padding:80px 0 56px}
+.hero h1{font-size:clamp(36px,5vw,60px);font-weight:700;line-height:1.1;letter-spacing:-.03em;margin-bottom:16px}
+.hero h1 span{display:block}
+.grad-text{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:17px;color:var(--muted);margin-bottom:36px;max-width:560px}
+.stat-pills{display:flex;gap:12px;flex-wrap:wrap}
+.pill{display:flex;flex-direction:column;gap:2px;padding:12px 20px;border:1px solid var(--border);border-radius:12px;background:var(--surface);backdrop-filter:blur(10px);transition:.3s}
+.pill:hover{border-color:var(--border-hi);transform:translateY(-2px)}
+.pill-label{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.pill-value{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:var(--accent)}
+/* UPLOAD SECTION */
+.section{padding:60px 0}
+.section-title{font-size:26px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
+.section-sub{color:var(--muted);font-size:15px;margin-bottom:36px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:16px;height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:.3s;position:relative;overflow:hidden;background:var(--surface)}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:rgba(20,184,166,.05)}
+.upload-zone .uz-icon{color:var(--faint);transition:.3s}
+.upload-zone:hover .uz-icon{color:var(--accent)}
+.upload-zone p{color:var(--muted);font-size:15px}
+.upload-zone small{color:var(--faint);font-size:13px}
+#preview-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.btn{width:100%;height:48px;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;transition:.25s;position:relative;overflow:hidden}
+.btn-primary{background:var(--grad);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 8px 24px rgba(20,184,166,.25)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-dots::after{content:'';animation:dots 1.2s infinite}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
+/* Result panel */
+.result-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.result-empty{color:var(--faint);font-size:15px;text-align:center}
+.result-empty svg{margin:0 auto 12px;display:block;color:var(--faint)}
+.verdict{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;padding:14px 36px;border-radius:12px;letter-spacing:.06em;text-align:center}
+.verdict.defect{color:var(--danger);border:2px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08)}
+.verdict.normal{color:var(--success);border:2px solid rgba(16,185,129,.3);background:rgba(16,185,129,.08)}
+.conf-wrap{width:100%;max-width:360px}
+.conf-label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+.conf-bar{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+.conf-fill{height:100%;background:var(--grad);border-radius:4px;width:0;transition:width .6s ease-out}
+.prob-row{width:100%;max-width:360px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace}
+.meta-row{font-size:12px;color:var(--faint);font-family:'JetBrains Mono',monospace;text-align:center}
+/* Demo notice */
+.notice{width:100%;max-width:360px;border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.5}
+.notice.warning{border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);color:var(--warning)}
+.notice.danger{border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);color:var(--danger)}
+/* AI Analysis card */
+.ai-card{width:100%;max-width:360px;border:1px solid var(--border-hi);border-radius:12px;background:rgba(20,184,166,.03);overflow:hidden}
+.ai-card-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+.ai-card-head span:first-child{font-size:14px;font-weight:600;color:var(--accent)}
+.ai-card-head span:last-child{font-size:11px;color:var(--faint)}
+.ai-card-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ai-row{font-size:13px;color:var(--muted);line-height:1.5}
+.ai-row strong{color:var(--text);display:block;font-size:12px;font-weight:600;margin-bottom:2px}
+.ai-demo-note{font-size:11px;color:var(--faint);padding:8px 16px;border-top:1px solid var(--border)}
+/* Shimmer */
+.shimmer{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Footer */
+footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;color:var(--faint);font-size:13px;margin-top:80px;position:relative;z-index:1}
+footer a{color:var(--accent);text-decoration:none}
+footer p{margin-bottom:4px}
+/* Mobile */
+@media(max-width:768px){
+  nav{padding:0 16px}
+  .nav-links{display:none}
+  .hero{padding:48px 0 36px}
+  .two-col{grid-template-columns:1fr}
+  .stat-pills{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .container{padding:0 16px}
+  *:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+}
+</style>
 </head>
 <body>
-
-  <div class="container">
-    <nav>
-      <div class="logo">
-        <div class="logo-icon"></div>
-        FabricAI
-      </div>
-      <div class="status-badge glass">
-        <div class="status-dot" id="api-status"></div>
-        <span id="api-status-text">Connecting...</span>
-      </div>
-    </nav>
-
-    <header>
-      <h1 class="hero-title">Textile Defect Detection</h1>
-      <p class="hero-subtitle">Production-ready inference powered by EfficientNet-B0 and augmented with WGAN-GP synthesized defects.</p>
-      
-      <div class="hero-stats">
-        <div class="stat-pill">
-          <span class="label">Val Accuracy</span>
-          <span id="hero-val-acc">--%</span>
-        </div>
-        <div class="stat-pill">
-          <span class="label">ROC-AUC</span>
-          <span id="hero-roc-auc">--</span>
-        </div>
-        <div class="stat-pill">
-          <span class="label">Test ROC-AUC</span>
-          <span id="hero-test-auc">0.59</span>
-        </div>
-      </div>
-    </header>
-
-    <section class="upload-section">
-      <div class="upload-card glass">
-        <div class="dropzone" id="dropzone">
-          <div class="dropzone-inner" id="dropzone-inner">
-            <div class="dropzone-icon">✨</div>
-            <div style="font-size: 1.25rem; font-weight: 500; margin-bottom: 0.5rem">Drop textile image</div>
-            <div style="font-size: 0.875rem; color: var(--text-muted);">or click to browse</div>
-          </div>
-          <img id="preview-image" alt="Preview">
-          <input type="file" id="file-input" style="display: none;" accept="image/*">
-        </div>
-
-        <div class="upload-actions">
-          <button id="analyze-btn" disabled>Analyze Image</button>
-          
-          <div class="result-panel" id="result-panel">
-            <div class="verdict" id="result-verdict">--</div>
-            <div class="confidence-bar-container">
-              <div class="confidence-fill" id="confidence-fill"></div>
-            </div>
-            <div class="result-details">
-              <span>Confidence: <span id="result-conf">--</span>%</span>
-              <span><span id="result-ms">--</span>ms</span>
-            </div>
-            <div class="demo-badge" id="demo-badge">
-              ⚠ Demo Mode — configure HF_MODEL_REPO to enable real inference
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2 class="section-title">Training Progression</h2>
-      <div class="charts-container">
-        <div class="chart-card glass">
-          <div class="chart-title">Baseline Model</div>
-          <svg class="chart-svg" id="chart-baseline" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <!-- Drawn via JS -->
-          </svg>
-        </div>
-        <div class="chart-card glass">
-          <div class="chart-title">GAN-Augmented Model</div>
-          <svg class="chart-svg" id="chart-augmented" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <!-- Drawn via JS -->
-          </svg>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2 class="section-title">Performance Metrics</h2>
-      <div class="metrics-grid">
-        <div class="metric-card glass">
-          <div class="metric-label">Validation Accuracy</div>
-          <div class="metric-value">
-            <span id="metric-acc">0</span>%
-            <span class="metric-delta" id="delta-acc"></span>
-          </div>
-        </div>
-        <div class="metric-card glass">
-          <div class="metric-label">ROC-AUC Score</div>
-          <div class="metric-value">
-            <span id="metric-roc">0</span>
-            <span class="metric-delta" id="delta-roc"></span>
-          </div>
-        </div>
-        <div class="metric-card glass">
-          <div class="metric-label">Defect Recall</div>
-          <div class="metric-value">
-            <span id="metric-recall">0</span>%
-            <span class="metric-delta" id="delta-recall"></span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2 class="section-title">Defect Distribution</h2>
-      <div class="table-container glass">
-        <table>
-          <thead>
-            <tr>
-              <th>Defect Type</th>
-              <th>Training Samples</th>
-              <th>Test Samples</th>
-              <th>Rarity</th>
-            </tr>
-          </thead>
-          <tbody id="defect-table-body">
-            <!-- Populated via JS -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section>
-      <h2 class="section-title">Defect Simulation Examples <span style="font-size: 0.5em; font-weight: normal; color: var(--text-muted); vertical-align: middle;">(illustrative)</span></h2>
-      <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.125rem;">Procedurally generated anomaly examples simulating WGAN-GP output.</p>
-      <div class="samples-strip" id="samples-strip">
-        <!-- Populated via JS -->
-      </div>
-    </section>
-
-    <section class="deploy-config glass" id="deploy-config">
-      <h3>⚠ Deployment Configuration Needed</h3>
-      <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 1.125rem;">Real inference is disabled because model weights are not configured. Set the following environment variables in your Vercel project settings:</p>
-      <div class="code-block">HF_MODEL_REPO = your-username/fabricai-weights
-HF_TOKEN      = hf_xxxxxxxxxxxxxxxxxxxx (optional)</div>
-      <a href="https://vercel.com/dashboard" target="_blank">Open Vercel Dashboard →</a>
-    </section>
-
-    <footer>
-      FabricAI — Deployed on Vercel
-    </footer>
+<nav>
+  <a href="/" class="logo" aria-label="FabricAI home">
+    <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="12" height="12" rx="2" stroke="#2dd4bf" stroke-width="1.5"/>
+      <rect x="19" y="1" width="12" height="12" rx="2" stroke="#2dd4bf" stroke-width="1.5"/>
+      <rect x="1" y="19" width="12" height="12" rx="2" stroke="#0f766e" stroke-width="1.5"/>
+      <rect x="19" y="19" width="12" height="12" rx="2" stroke="#0f766e" stroke-width="1.5"/>
+      <line x1="13" y1="7" x2="19" y2="7" stroke="#2dd4bf" stroke-width="1.5"/>
+      <line x1="13" y1="25" x2="19" y2="25" stroke="#0f766e" stroke-width="1.5"/>
+      <line x1="7" y1="13" x2="7" y2="19" stroke="#2dd4bf" stroke-width="1.5"/>
+      <line x1="25" y1="13" x2="25" y2="19" stroke="#14b8a6" stroke-width="1.5"/>
+    </svg>
+    <span class="logo-text">FabricAI</span>
+  </a>
+  <div class="nav-links">
+    <a href="/" class="active">Inspect</a>
+    <a href="/analytics.html">Analytics</a>
+    <a href="/architecture.html">Architecture</a>
   </div>
+  <div class="nav-right">
+    <span class="status-badge demo" id="statusBadge" aria-live="polite">
+      <span class="status-dot"></span>
+      <span id="statusText">Demo</span>
+    </span>
+    <a href="https://github.com" target="_blank" rel="noopener" class="icon-btn" aria-label="GitHub">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+    </a>
+  </div>
+</nav>
 
-  <script>
-    gsap.registerPlugin(ScrollTrigger);
+<main>
+<div class="container">
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <h1>
+      <span>Textile Defect</span>
+      <span class="grad-text">Detection</span>
+    </h1>
+    <p class="hero-sub">EfficientNet-B0 · GAN-Augmented · 83% val accuracy · 94% defect recall</p>
+    <div class="stat-pills" id="statPills">
+      <div class="pill">
+        <span class="pill-label">Val Accuracy</span>
+        <span class="pill-value" id="pillValAcc">83.19%</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Val ROC-AUC</span>
+        <span class="pill-value" id="pillRocAuc">0.9197</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Test Accuracy</span>
+        <span class="pill-value" id="pillTestAcc">71.43%</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Defect Recall</span>
+        <span class="pill-value" id="pillRecall">94.44%</span>
+      </div>
+    </div>
+  </section>
 
-    let demoModeActive = false;
-    let selectedFile = null;
+  <!-- UPLOAD & INFERENCE -->
+  <section class="section" id="infer">
+    <h2 class="section-title">Upload &amp; Inspect</h2>
+    <p class="section-sub">Drop any fabric image — the model runs inference instantly in demo mode.</p>
+    <div class="two-col">
+      <!-- LEFT: Upload -->
+      <div>
+        <div class="upload-zone" id="dropZone" role="button" tabindex="0" aria-label="Click or drop image here">
+          <img id="preview-img" alt="Selected fabric image preview">
+          <svg class="uz-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <p>Drop textile image here</p>
+          <small>or click to browse · JPEG, PNG, WebP · max 10MB</small>
+        </div>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" style="display:none" aria-label="File input">
+        <button class="btn btn-primary" id="analyzeBtn" onclick="analyze()" disabled aria-label="Analyze selected image">
+          Analyze Image
+        </button>
+      </div>
+      <!-- RIGHT: Results -->
+      <div class="result-panel" id="resultPanel" aria-live="polite">
+        <div class="result-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          Upload an image to begin analysis
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
 
-    function animateCounter(elId, toValue, decimals = 2, suffix = '') {
-      const el = document.getElementById(elId);
-      if (!el) return;
-      
-      const isPercent = toValue > 1; 
-      
-      gsap.fromTo(el, 
-        { innerHTML: "0" },
-        {
-          innerHTML: toValue,
-          duration: 2,
-          ease: "power2.out",
-          snap: { innerHTML: isPercent ? 0.01 : 0.0001 },
-          onUpdate: function() {
-            el.innerHTML = Number(this.targets()[0].innerHTML).toFixed(decimals) + suffix;
-          }
-        }
-      );
+<footer>
+  <div class="container">
+    <p>FabricAI · EfficientNet-B0 + WGAN-GP · PyTorch 2.2 · <a href="https://vercel.com" target="_blank">Vercel</a></p>
+    <p>Trained on RTX 3050 · Deployed on Vercel Serverless · <a href="https://github.com" target="_blank">GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+// ── Fallback data
+const FB = {valAcc:83.19,rocAuc:0.9197,testAcc:71.43,recall:94.44};
+
+// ── Load model info on boot
+async function loadModelInfo(){
+  try{
+    const r=await fetch('/api/model-info');
+    if(!r.ok)return;
+    const d=await r.json();
+    const badge=document.getElementById('statusBadge');
+    const txt=document.getElementById('statusText');
+    if(!d.demo_mode){
+      badge.className='status-badge live';
+      txt.textContent='Live';
     }
+  }catch(e){}
+}
 
-    function drawChart(svgId, data) {
-      const svg = document.getElementById(svgId);
-      if (!svg || !data || data.length === 0) return;
+// ── Load stats for hero pills
+async function loadStats(){
+  try{
+    const r=await fetch('/api/project-stats');
+    if(!r.ok)return;
+    const d=await r.json();
+    const m=d.metrics&&d.metrics.augmented;
+    if(!m)return;
+    document.getElementById('pillValAcc').textContent=(m.best_val_acc||FB.valAcc)+'%';
+    document.getElementById('pillRocAuc').textContent=(m.val_roc_auc||FB.rocAuc);
+    document.getElementById('pillTestAcc').textContent=(m.test_acc||FB.testAcc)+'%';
+    document.getElementById('pillRecall').textContent=(m.defect_recall||FB.recall)+'%';
+  }catch(e){}
+}
 
-      const epochs = data.length;
-      const xStep = 100 / (epochs - 1);
-      
-      const mapY = (val) => 100 - ((val - 50) / 50 * 100);
+// ── File handling
+const dropZone=document.getElementById('dropZone');
+const fileInput=document.getElementById('fileInput');
+const previewImg=document.getElementById('preview-img');
+const analyzeBtn=document.getElementById('analyzeBtn');
+let selectedFile=null;
 
-      let trainPathD = `M 0 ${mapY(data[0].train_acc)}`;
-      let valPathD = `M 0 ${mapY(data[0].val_acc)}`;
+dropZone.addEventListener('click',()=>fileInput.click());
+dropZone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')fileInput.click()});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('dragover');
+  if(e.dataTransfer.files.length)setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change',e=>{if(e.target.files.length)setFile(e.target.files[0])});
 
-      for (let i = 1; i < epochs; i++) {
-        const x = i * xStep;
-        trainPathD += ` L ${x} ${mapY(data[i].train_acc)}`;
-        valPathD += ` L ${x} ${mapY(data[i].val_acc)}`;
-      }
+function setFile(f){
+  if(!f.type.match(/image\/(jpeg|png|webp|jpg)/)){
+    showError('Please select a JPEG, PNG, or WebP image.');return;
+  }
+  selectedFile=f;
+  const reader=new FileReader();
+  reader.onload=e=>{previewImg.src=e.target.result;previewImg.style.display='block'};
+  reader.readAsDataURL(f);
+  analyzeBtn.disabled=false;
+}
 
-      const trainPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      trainPath.setAttribute('d', trainPathD);
-      trainPath.setAttribute('fill', 'none');
-      trainPath.setAttribute('stroke', 'url(#chartGradient)');
-      trainPath.setAttribute('stroke-width', '3');
-      trainPath.setAttribute('vector-effect', 'non-scaling-stroke');
-      trainPath.classList.add('chart-line');
+// ── Analyze
+async function analyze(){
+  if(!selectedFile)return;
+  analyzeBtn.disabled=true;
+  analyzeBtn.textContent='Analyzing';
+  analyzeBtn.classList.add('btn-dots');
+  showSkeleton();
+  const fd=new FormData();
+  fd.append('image',selectedFile);
+  try{
+    const r=await fetch('/api/predict',{method:'POST',body:fd});
+    const d=await r.json();
+    if(!r.ok||d.error)throw new Error(d.error||'Server error '+r.status);
+    showResult(d);
+    fetchExplain(d);
+  }catch(e){
+    showError('Analysis failed — '+e.message+'. Try again.');
+  }finally{
+    analyzeBtn.disabled=false;
+    analyzeBtn.textContent='Analyze Image';
+    analyzeBtn.classList.remove('btn-dots');
+  }
+}
 
-      const valPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      valPath.setAttribute('d', valPathD);
-      valPath.setAttribute('fill', 'none');
-      valPath.setAttribute('stroke', 'rgba(255,255,255,0.3)');
-      valPath.setAttribute('stroke-width', '2');
-      valPath.setAttribute('stroke-dasharray', '4 4');
-      valPath.setAttribute('vector-effect', 'non-scaling-stroke');
+function showSkeleton(){
+  const p=document.getElementById('resultPanel');
+  p.innerHTML=`
+    <div class="shimmer" style="width:180px;height:54px;margin:0 auto"></div>
+    <div class="shimmer" style="width:100%;max-width:360px;height:8px;margin-top:8px"></div>
+    <div class="shimmer" style="width:90%;max-width:340px;height:8px"></div>
+    <div class="shimmer" style="width:100%;max-width:360px;height:80px;border-radius:12px;margin-top:8px"></div>`;
+}
 
-      if (!document.getElementById('chartGradient')) {
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        defs.innerHTML = `
-          <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#2dd4bf" />
-            <stop offset="100%" stop-color="#0f766e" />
-          </linearGradient>
-        `;
-        svg.appendChild(defs);
-      }
+function showResult(d){
+  const p=document.getElementById('resultPanel');
+  const isD=d.verdict==='DEFECT';
+  const conf=+(d.confidence*100).toFixed(1);
+  const np=+(d.probabilities.normal*100).toFixed(1);
+  const dp=+(d.probabilities.defect*100).toFixed(1);
+  const cls=isD?'defect':'normal';
+  p.innerHTML=`
+    <div class="verdict ${cls}" id="vBadge">${d.verdict}</div>
+    <div class="conf-wrap">
+      <div class="conf-label"><span>Confidence</span><span id="confPct" style="font-family:'JetBrains Mono',monospace">${conf}%</span></div>
+      <div class="conf-bar"><div class="conf-fill" id="confFill"></div></div>
+    </div>
+    <div class="prob-row">
+      <span>Normal: ${np}%</span><span>Defect: ${dp}%</span>
+    </div>
+    <div class="meta-row">Confidence: ${conf}% &nbsp;·&nbsp; Inference: ${d.inference_ms}ms &nbsp;·&nbsp; ${d.model}</div>
+    ${d.demo_mode?`<div class="notice warning">⚠ Demo Mode — predictions are deterministic placeholders.<br>Set HF_MODEL_REPO + HF_TOKEN in Vercel to enable real inference.</div>`:''}
+    <div class="ai-card" id="aiCard">
+      <div class="ai-card-head">
+        <span>AI Analysis</span><span>powered by Groq Llama 3.1</span>
+      </div>
+      <div class="ai-card-body" id="aiBody">
+        <div class="shimmer" style="height:14px;width:100%;border-radius:4px"></div>
+        <div class="shimmer" style="height:14px;width:90%;border-radius:4px"></div>
+        <div class="shimmer" style="height:14px;width:80%;border-radius:4px"></div>
+      </div>
+    </div>`;
+  requestAnimationFrame(()=>{
+    const fill=document.getElementById('confFill');
+    if(fill)fill.style.width=conf+'%';
+    const vb=document.getElementById('vBadge');
+    if(vb&&window.gsap){gsap.from(vb,{scale:.5,opacity:0,duration:.5,ease:'back.out(1.7)'})}
+  });
+}
 
-      svg.appendChild(valPath);
-      svg.appendChild(trainPath);
-
-      const len = trainPath.getTotalLength();
-      trainPath.style.strokeDasharray = len;
-      trainPath.style.strokeDashoffset = len;
-
-      gsap.to(trainPath, {
-        strokeDashoffset: 0,
-        duration: 2.5,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: svg,
-          start: 'top 85%'
-        }
-      });
+async function fetchExplain(pred){
+  try{
+    const r=await fetch('/api/explain',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({verdict:pred.verdict,confidence:pred.confidence,filename:selectedFile?selectedFile.name:'image.jpg'})
+    });
+    const d=await r.json();
+    const body=document.getElementById('aiBody');
+    if(!body)return;
+    body.innerHTML=`
+      <div class="ai-row"><strong>🔍 What it is</strong>${d.explanation}</div>
+      <div class="ai-row"><strong>⚙ Likely cause</strong>${d.likely_cause}</div>
+      <div class="ai-row"><strong>✅ Recommendation</strong>${d.recommendation}</div>`;
+    const card=document.getElementById('aiCard');
+    const demoNote=document.getElementById('aiCard')&&d.demo_mode;
+    if(d.demo_mode){
+      const dn=document.createElement('div');
+      dn.className='ai-demo-note';
+      dn.textContent='(illustrative — Groq not configured)';
+      if(card)card.appendChild(dn);
     }
+    if(window.gsap&&card){gsap.from(card,{opacity:0,y:10,duration:.4})}
+  }catch(e){}
+}
 
-    function generateFallbackData() {
-        return {
-            metrics: {
-                augmented: { best_val_acc: 83.19, val_roc_auc: 0.9197, defect_recall: 94.44 },
-                delta: { val_acc: "+1.68%", roc_auc: "+0.0365", defect_recall: "+5.55%" }
-            },
-            dataset: {
-                types: [
-                    {name: "fuzzyball", train: 39, test: 0},
-                    {name: "cut_selvage", train: 26, test: 0},
-                    {name: "color_stain", train: 19, test: 19},
-                    {name: "weft_crack", train: 1, test: 0}
-                ]
-            },
-            training_logs: {
-                baseline: Array.from({length: 40}, (_, i) => ({train_acc: 50 + i*0.8, val_acc: 55 + i*0.5})),
-                augmented: Array.from({length: 40}, (_, i) => ({train_acc: 52 + i*0.9, val_acc: 57 + i*0.6}))
-            }
-        };
-    }
+function showError(msg){
+  const p=document.getElementById('resultPanel');
+  p.innerHTML=`<div class="notice danger">❌ ${msg}</div>`;
+}
 
-    async function init() {
-      gsap.from('nav', {y: -30, opacity: 0, duration: 0.8, ease: 'power3.out'});
-      
-      const title = document.querySelector('.hero-title');
-      const text = title.textContent;
-      title.textContent = '';
-      text.split(' ').forEach(word => {
-        const span = document.createElement('span');
-        span.textContent = word;
-        title.appendChild(span);
-      });
-      gsap.from('.hero-title span', {y: 40, opacity: 0, stagger: 0.1, duration: 1, ease: 'back.out(1.5)', delay: 0.2});
-      
-      gsap.from('.hero-subtitle', {y: 20, opacity: 0, duration: 1, delay: 0.5, ease: 'power3.out'});
-      gsap.from('.hero-stats', {y: 20, opacity: 0, duration: 1, delay: 0.7, ease: 'power3.out'});
-
-      document.querySelectorAll('.glass').forEach(card => {
-        gsap.from(card, {
-          y: 40, 
-          opacity: 0, 
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: card,
-            start: 'top 90%'
-          }
-        });
-      });
-
-      let data;
-      try {
-        const [statsRes, infoRes] = await Promise.all([
-            fetch('/api/project-stats'),
-            fetch('/api/model-info')
-        ]);
-        if (!statsRes.ok || !infoRes.ok) throw new Error('API Error');
-        data = await statsRes.json();
-        const info = await infoRes.json();
-        
-        if (info.demo_mode) {
-            document.getElementById('demo-badge').style.display = 'block';
-            document.getElementById('deploy-config').style.display = 'block';
-        }
-
-        document.getElementById('api-status').className = 'status-dot live';
-        document.getElementById('api-status-text').textContent = 'API Connected';
-      } catch (err) {
-        console.warn('API unavailable, falling back to mock data');
-        document.getElementById('api-status').className = 'status-dot demo';
-        document.getElementById('api-status-text').textContent = 'Demo Mode (Offline)';
-        data = generateFallbackData();
-      }
-
-      document.getElementById('hero-val-acc').textContent = data.metrics.augmented.best_val_acc + '%';
-      document.getElementById('hero-roc-auc').textContent = data.metrics.augmented.val_roc_auc;
-      document.getElementById('hero-test-auc').textContent = data.metrics.augmented.test_roc_auc || '0.5893';
-
-      drawChart('chart-baseline', data.training_logs.baseline);
-      drawChart('chart-augmented', data.training_logs.augmented);
-
-      animateCounter('metric-acc', data.metrics.augmented.best_val_acc, 2);
-      document.getElementById('delta-acc').textContent = data.metrics.delta.val_acc;
-
-      animateCounter('metric-roc', data.metrics.augmented.val_roc_auc, 4);
-      document.getElementById('delta-roc').textContent = data.metrics.delta.roc_auc;
-
-      animateCounter('metric-recall', data.metrics.augmented.defect_recall, 2);
-      document.getElementById('delta-recall').textContent = data.metrics.delta.defect_recall;
-
-      const tbody = document.getElementById('defect-table-body');
-      data.dataset.types.forEach(type => {
-        const tr = document.createElement('tr');
-        tr.classList.add('defect-row');
-        
-        let rarityClass, rarityText;
-        if (type.train === 1) { rarityClass = 'rarity-singleton'; rarityText = 'Singleton'; }
-        else if (type.train <= 5) { rarityClass = 'rarity-rare'; rarityText = 'Rare'; }
-        else { rarityClass = 'rarity-limited'; rarityText = 'Limited'; }
-
-        tr.innerHTML = `
-          <td>${type.name.replace('_', ' ')}</td>
-          <td>${type.train}</td>
-          <td>${type.test || '-'}</td>
-          <td><span class="rarity-badge ${rarityClass}">${rarityText}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      gsap.from('.defect-row', {
-        x: -30, 
-        opacity: 0, 
-        stagger: 0.05,
-        duration: 0.6,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: '.table-container',
-          start: 'top 85%'
-        }
-      });
-
-      const strip = document.getElementById('samples-strip');
-      for (let i = 1; i <= 6; i++) {
-        const div = document.createElement('div');
-        div.className = 'sample-item';
-        const img = new Image();
-        img.src = `/api/synthetic-sample?seed=${i * 13}`;
-        img.onload = () => div.appendChild(img);
-        img.onerror = () => {
-            div.innerHTML = `<div class="sample-fallback">Sample ${i}<br>(API Offline)</div>`;
-        };
-        strip.appendChild(div);
-      }
-    }
-
-    const dropzone = document.getElementById('dropzone');
-    const dropzoneInner = document.getElementById('dropzone-inner');
-    const fileInput = document.getElementById('file-input');
-    const preview = document.getElementById('preview-image');
-    const analyzeBtn = document.getElementById('analyze-btn');
-
-    dropzone.addEventListener('mousemove', e => {
-      if (selectedFile) return;
-      const r = dropzone.getBoundingClientRect();
-      gsap.to(dropzoneInner, {
-        x: (e.clientX - r.left - r.width/2) * 0.05,
-        y: (e.clientY - r.top - r.height/2) * 0.05,
-        duration: 0.3
-      });
-    });
-    dropzone.addEventListener('mouseleave', () => {
-      gsap.to(dropzoneInner, {x: 0, y: 0, duration: 0.4});
-    });
-
-    dropzone.addEventListener('click', () => fileInput.click());
-
-    dropzone.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropzone.style.borderColor = 'var(--accent)';
-      dropzone.style.background = 'rgba(20, 184, 166, 0.1)';
-    });
-
-    dropzone.addEventListener('dragleave', () => {
-      dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
-      dropzone.style.background = 'rgba(0,0,0,0.2)';
-    });
-
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
-      dropzone.style.background = 'rgba(0,0,0,0.2)';
-      if (e.dataTransfer.files.length) {
-        handleFile(e.dataTransfer.files[0]);
-      }
-    });
-
-    fileInput.addEventListener('change', e => {
-      if (e.target.files.length) {
-        handleFile(e.target.files[0]);
-      }
-    });
-
-    function handleFile(file) {
-      if (!file.type.startsWith('image/')) return;
-      selectedFile = file;
-      
-      const reader = new FileReader();
-      reader.onload = e => {
-        preview.src = e.target.result;
-        preview.style.display = 'block';
-        gsap.fromTo(preview, {opacity: 0, scale: 0.95}, {opacity: 1, scale: 1, duration: 0.5});
-        dropzoneInner.style.display = 'none';
-        analyzeBtn.disabled = false;
-        
-        document.getElementById('result-panel').classList.remove('active');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    analyzeBtn.addEventListener('click', async () => {
-      if (!selectedFile) return;
-      
-      analyzeBtn.disabled = true;
-      analyzeBtn.innerHTML = 'Analyzing <span style="animation: pulse 1s infinite">...</span>';
-      
-      const formData = new FormData();
-      formData.append('image', selectedFile);
-
-      try {
-        let data;
-        try {
-            const res = await fetch('/api/predict', { method: 'POST', body: formData });
-            if(!res.ok) throw new Error();
-            data = await res.json();
-        } catch(e) {
-            await new Promise(r => setTimeout(r, 1200));
-            data = {
-                verdict: Math.random() > 0.5 ? "DEFECT" : "NORMAL",
-                confidence: 0.85 + Math.random() * 0.14,
-                inference_ms: 11.42,
-                demo_mode: true
-            };
-        }
-        
-        if (data.demo_mode) {
-          document.getElementById('demo-badge').style.display = 'block';
-          document.getElementById('deploy-config').style.display = 'block';
-        }
-
-        const verdictEl = document.getElementById('result-verdict');
-        verdictEl.textContent = data.verdict;
-        verdictEl.className = `verdict ${data.verdict.toLowerCase()}`;
-        
-        document.getElementById('result-conf').textContent = (data.confidence * 100).toFixed(2);
-        document.getElementById('result-ms').textContent = data.inference_ms;
-        
-        const panel = document.getElementById('result-panel');
-        panel.classList.add('active');
-
-        gsap.from(verdictEl, {scale: 0.5, opacity: 0, duration: 0.6, ease: 'back.out(2)'});
-        gsap.to('#confidence-fill', {
-          width: (data.confidence * 100) + '%',
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.2
-        });
-        
-        document.getElementById('confidence-fill').style.background = 
-          data.verdict === 'DEFECT' ? 'var(--danger)' : 'var(--success)';
-        document.getElementById('confidence-fill').style.boxShadow = 
-          data.verdict === 'DEFECT' ? '0 0 15px rgba(239, 68, 68, 0.8)' : '0 0 15px rgba(16, 185, 129, 0.8)';
-
-      } catch (err) {
-        alert('Inference failed. Check console.');
-        console.error(err);
-      } finally {
-        analyzeBtn.textContent = 'Analyze Image';
-        analyzeBtn.disabled = false;
-      }
-    });
-
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
-  <style>
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-  </style>
+// ── GSAP animations on load
+window.addEventListener('load',()=>{
+  loadModelInfo();
+  loadStats();
+  if(!window.gsap)return;
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.from('#hero h1 span',{y:40,opacity:0,stagger:.15,duration:.7,ease:'power3.out'});
+  gsap.from('.pill',{scale:.85,opacity:0,stagger:.08,duration:.5,delay:.3,ease:'back.out(1.4)'});
+  gsap.from('#infer',{y:30,opacity:0,duration:.6,scrollTrigger:{trigger:'#infer',start:'top 85%'}});
+});
+</script>
 </body>
 </html>

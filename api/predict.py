@@ -13,106 +13,105 @@ CORS(app)
 TRANSFORM = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    )
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
 ])
+
+ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/jpg'}
+MAX_SIZE_BYTES = 10 * 1024 * 1024  # 10MB
 
 _model_cache = None
 _model_lock = threading.Lock()
+
 
 def load_model():
     global _model_cache
     if _model_cache is not None:
         return _model_cache, False
-    
     with _model_lock:
         if _model_cache is not None:
             return _model_cache, False
-
-        hf_repo = os.environ.get("HF_MODEL_REPO")
-        hf_token = os.environ.get("HF_TOKEN")
-        
+        hf_repo = os.environ.get("HF_MODEL_REPO", "")
         if not hf_repo:
             return None, True
-        
         try:
             from huggingface_hub import hf_hub_download
-            weight_path = hf_hub_download(
+            path = hf_hub_download(
                 repo_id=hf_repo,
                 filename="best_model_augmented.pth",
-                token=hf_token,
+                token=os.environ.get("HF_TOKEN"),
                 cache_dir="/tmp/hf_cache"
             )
-            model = timm.create_model('efficientnet_b0', pretrained=False, num_classes=2)
-            state = torch.load(weight_path, map_location='cpu')
+            model = timm.create_model('efficientnet_b0',
+                                       pretrained=False, num_classes=2)
+            state = torch.load(path, map_location='cpu')
             if isinstance(state, dict) and 'model_state_dict' in state:
                 state = state['model_state_dict']
             model.load_state_dict(state)
             model.eval()
             _model_cache = model
+            logger.info("Model loaded from HuggingFace successfully")
             return model, False
         except Exception as e:
             logger.error(f"Model load failed: {e}")
             return None, True
 
-@app.route('/api/predict', methods=['POST', 'OPTIONS'])
-def predict():
-    if request.method == 'OPTIONS':
-        return '', 200
-    
-    if 'image' not in request.files:
-        return jsonify({"error": "No image field in request"}), 400
-    
-    file = request.files['image']
-    
-    ALLOWED_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
-    MAX_SIZE_MB = 10
 
-    if file.mimetype not in ALLOWED_TYPES:
-        return jsonify({"error": f"Unsupported type: {file.mimetype}. Use JPEG/PNG/WebP"}), 415
-    
+@app.route('/api/predict', methods=['POST'])
+def predict():
+    if 'image' not in request.files:
+        return jsonify({"error": "Missing 'image' field in form-data"}), 400
+
+    file = request.files['image']
+
+    if file.mimetype not in ALLOWED_MIMETYPES:
+        return jsonify({
+            "error": f"Unsupported file type: {file.mimetype}. Use JPEG, PNG, or WebP."
+        }), 415
+
     raw = file.read()
-    if len(raw) > MAX_SIZE_MB * 1024 * 1024:
-        return jsonify({"error": f"File too large. Max {MAX_SIZE_MB}MB"}), 413
-    
+    if len(raw) > MAX_SIZE_BYTES:
+        return jsonify({"error": "File too large. Max 10MB allowed."}), 413
+
     try:
         img = Image.open(io.BytesIO(raw)).convert('RGB')
     except Exception:
-        return jsonify({"error": "Invalid image file"}), 400
-    
+        return jsonify({"error": "Could not decode image. File may be corrupted."}), 400
+
     model, is_demo = load_model()
     start = time.perf_counter()
-    
+
     if is_demo:
-        h = int(hashlib.md5(file.filename.encode()).hexdigest(), 16) % 100
-        defect_prob = 0.3 + (h % 40) / 100
-        normal_prob = 1.0 - defect_prob
-        verdict = "DEFECT" if defect_prob > normal_prob else "NORMAL"
+        # Balanced deterministic demo: 30–69% defect probability
+        h = int(hashlib.md5(raw[:512]).hexdigest(), 16) % 100
+        defect_prob = round(0.30 + (h % 40) / 100.0, 4)
+        normal_prob = round(1.0 - defect_prob, 4)
         inference_ms = 11.18
     else:
         tensor = TRANSFORM(img).unsqueeze(0)
         with torch.no_grad():
             logits = model(tensor)
             probs = torch.softmax(logits, dim=1)
-        normal_prob = float(probs[0][0])
-        defect_prob = float(probs[0][1])
-        verdict = "DEFECT" if defect_prob > normal_prob else "NORMAL"
+        normal_prob = round(float(probs[0][0]), 4)
+        defect_prob = round(float(probs[0][1]), 4)
         inference_ms = round((time.perf_counter() - start) * 1000, 2)
-    
-    confidence = max(defect_prob, normal_prob)
-    
-    logger.info(f"Inference | file={file.filename} | result={verdict} | conf={confidence:.3f} | ms={inference_ms}")
-    
+
+    verdict = "DEFECT" if defect_prob > normal_prob else "NORMAL"
+    confidence = round(max(defect_prob, normal_prob), 4)
+
+    logger.info(
+        f"Inference | verdict={verdict} | conf={confidence:.3f} | "
+        f"ms={inference_ms} | demo={is_demo} | file={file.filename}"
+    )
+
     return jsonify({
         "verdict": verdict,
-        "confidence": round(confidence, 4),
+        "confidence": confidence,
         "probabilities": {
-            "normal": round(normal_prob, 4),
-            "defect": round(defect_prob, 4)
+            "normal": normal_prob,
+            "defect": defect_prob
         },
         "inference_ms": inference_ms,
-        "model": "EfficientNet-B0 (GAN-Augmented)" if not is_demo else "EfficientNet-B0 (DEMO)",
+        "model": "EfficientNet-B0 (GAN-Augmented)" if not is_demo else "EfficientNet-B0 (Demo)",
         "demo_mode": is_demo
     })

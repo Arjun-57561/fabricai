@@ -1,32 +1,33 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
 import json, os
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/api/project-stats', methods=['GET', 'OPTIONS'])
-def project_stats():
-    if request.method == 'OPTIONS':
-        return '', 200
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    base = os.path.dirname(os.path.dirname(__file__))
-    
-    # Load from data/ directory (always available — committed to repo)
-    with open(os.path.join(base, 'data', 'metrics.json')) as f:
-        metrics = json.load(f)
-    with open(os.path.join(base, 'data', 'defect_types.json')) as f:
-        defects = json.load(f)
-    with open(os.path.join(base, 'data', 'training_logs.json')) as f:
-        logs = json.load(f)
-    
+def load_json(filename):
+    with open(os.path.join(BASE, 'data', filename), 'r') as f:
+        return json.load(f)
+
+@app.route('/api/project-stats', methods=['GET'])
+def project_stats():
+    try:
+        metrics = load_json('metrics.json')
+        defects = load_json('defect_types.json')
+        logs    = load_json('training_logs.json')
+    except Exception as e:
+        return jsonify({"error": f"Data load failed: {str(e)}"}), 500
+
     return jsonify({
         "metrics": metrics,
         "dataset": defects,
         "training_logs": logs,
         "models": {
-            "backbone": "EfficientNet-B0",
-            "generator": "WGAN-GP + Self-Attention",
+            "backbone":        "EfficientNet-B0",
+            "generator":       "WGAN-GP + Self-Attention (500 epochs)",
+            "diffusion":       "DDPM U-Net (300 epochs)",
             "huggingface_repo": os.environ.get("HF_MODEL_REPO", "not-configured")
         }
     })
