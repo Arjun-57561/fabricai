@@ -1,8 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import torch, timm, time, io, os, logging, hashlib, threading
+import time, io, os, logging, hashlib, threading
 from PIL import Image
-from torchvision import transforms
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -10,18 +9,22 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-TRANSFORM = transforms.Compose([
-    transforms.Resize((256, 256)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
-])
-
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/jpg'}
 MAX_SIZE_BYTES = 10 * 1024 * 1024  # 10MB
 
 _model_cache = None
 _model_lock = threading.Lock()
+
+
+def _get_transform():
+    """Lazy-load torchvision transform only when needed."""
+    from torchvision import transforms
+    return transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
 
 
 def load_model():
@@ -35,6 +38,7 @@ def load_model():
         if not hf_repo:
             return None, True
         try:
+            import torch, timm
             from huggingface_hub import hf_hub_download
             path = hf_hub_download(
                 repo_id=hf_repo,
@@ -82,13 +86,15 @@ def predict():
     start = time.perf_counter()
 
     if is_demo:
-        # Balanced deterministic demo: 30–69% defect probability
+        # Balanced deterministic demo: 30-69% defect probability
         h = int(hashlib.md5(raw[:512]).hexdigest(), 16) % 100
         defect_prob = round(0.30 + (h % 40) / 100.0, 4)
         normal_prob = round(1.0 - defect_prob, 4)
         inference_ms = 11.18
     else:
-        tensor = TRANSFORM(img).unsqueeze(0)
+        import torch
+        transform = _get_transform()
+        tensor = transform(img).unsqueeze(0)
         with torch.no_grad():
             logits = model(tensor)
             probs = torch.softmax(logits, dim=1)
