@@ -1,0 +1,26 @@
+{
+  "types": [
+    {"name": "fuzzyball",    "train": 39, "test": 0},
+    {"name": "cut_selvage",  "train": 26, "test": 0},
+    {"name": "color_stain",  "train": 19, "test": 19},
+    {"name": "contamination","train": 18, "test": 17},
+    {"name": "hole",         "train": 17, "test": 17},
+    {"name": "nep",          "train": 14, "test": 17},
+    {"name": "broken_pick",  "train": 10, "test": 0},
+    {"name": "broken_end",   "train": 9,  "test": 0},
+    {"name": "broken_yarn",  "train": 8,  "test": 0},
+    {"name": "warp_ball",    "train": 6,  "test": 0},
+    {"name": "crease",       "train": 5,  "test": 0},
+    {"name": "weft_curling", "train": 3,  "test": 0},
+    {"name": "weft_crack",   "train": 1,  "test": 0},
+    {"name": "knots",        "train": 1,  "test": 0}
+  ],
+  "summary": {
+    "train_normal": 421,
+    "train_defect": 176,
+    "test_normal": 28,
+    "test_defect": 70,
+    "synthetic_generated": 300,
+    "total_defect_types": 14
+  }
+}

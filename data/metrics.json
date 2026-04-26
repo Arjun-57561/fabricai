@@ -1,0 +1,36 @@
+{
+  "baseline": {
+    "best_val_acc": 81.51,
+    "final_train_acc": 85.98,
+    "val_roc_auc": 0.8832,
+    "defect_recall": 88.89,
+    "defect_f1": 0.7442,
+    "defect_precision": 63.16,
+    "best_epoch": 5,
+    "test_acc": 71.43,
+    "test_roc_auc": 0.4929
+  },
+  "augmented": {
+    "best_val_acc": 83.19,
+    "final_train_acc": 89.33,
+    "val_roc_auc": 0.9197,
+    "defect_recall": 94.44,
+    "defect_f1": 0.7727,
+    "defect_precision": 65.38,
+    "best_epoch": 10,
+    "test_acc": 71.43,
+    "test_roc_auc": 0.5893
+  },
+  "delta": {
+    "val_acc": "+1.68%",
+    "roc_auc": "+0.0365",
+    "defect_recall": "+5.55%",
+    "test_roc_auc": "+0.0964"
+  },
+  "inference": {
+    "avg_ms": 11.18,
+    "fps": 89.5,
+    "hardware": "RTX 3050 Laptop GPU"
+  },
+  "test_note": "Test set distribution shift: 4/14 defect types covered. Baseline AUC 0.49 indicates near-random on unseen defect categories. GAN augmentation improved generalization AUC by +0.096."
+}

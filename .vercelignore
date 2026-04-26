@@ -1,0 +1,13 @@
+*.pth
+*.pt
+*.pkl
+*.h5
+__pycache__/
+.git/
+*.ipynb
+*.pdf
+node_modules/
+.env
+synthetic_defects/
+train/
+test/

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+
+  "routes": [
+    { "src": "/api/predict",          "dest": "api/predict.py" },
+    { "src": "/api/project-stats",    "dest": "api/project_stats.py" },
+    { "src": "/api/model-info",       "dest": "api/model_info.py" },
+    { "src": "/api/synthetic-sample", "dest": "api/synthetic_sample.py" },
+    { "src": "/(.*)",                 "dest": "public/index.html" }
+  ],
+  "functions": {
+    "api/predict.py": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "excludeFiles": "**/__pycache__/**"
+    },
+    "api/*.py": {
+      "maxDuration": 10,
+      "excludeFiles": "**/__pycache__/**"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
+    }
+  ]
+}
