@@ -7,6 +7,13 @@ Run: python dev_server.py
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
+# Load .env for local dev (no-op if python-dotenv not installed)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+except ImportError:
+    pass
+
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 
@@ -63,7 +70,10 @@ if __name__ == '__main__':
     print('    POST /api/predict        (multipart, key=image)')
     print('    POST /api/explain        (JSON body)')
     print()
-    print('  Running in DEMO mode (no HF_MODEL_REPO set)')
+    if os.environ.get('HF_MODEL_REPO'):
+        print(f"  Live mode — HF_MODEL_REPO={os.environ.get('HF_MODEL_REPO')}")
+    else:
+        print('  Running in DEMO mode (no HF_MODEL_REPO set)')
     print('  Press Ctrl+C to stop')
     print()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
