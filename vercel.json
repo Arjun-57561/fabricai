@@ -13,11 +13,11 @@
     { "src": "/(.*)",                 "dest": "public/index.html" }
   ],
   "functions": {
-    "api/predict.py":       { "memory": 1024, "maxDuration": 30, "runtime": "python3.12" },
-    "api/explain.py":       { "memory": 512,  "maxDuration": 15, "runtime": "python3.12" },
-    "api/model_info.py":    { "memory": 256,  "maxDuration": 10, "runtime": "python3.12" },
-    "api/project_stats.py": { "memory": 256,  "maxDuration": 10, "runtime": "python3.12" },
-    "api/synthetic_sample.py": { "memory": 256, "maxDuration": 10, "runtime": "python3.12" }
+    "api/predict.py":       { "memory": 1024, "maxDuration": 30 },
+    "api/explain.py":       { "memory": 512,  "maxDuration": 15 },
+    "api/model_info.py":    { "memory": 256,  "maxDuration": 10 },
+    "api/project_stats.py": { "memory": 256,  "maxDuration": 10 },
+    "api/synthetic_sample.py": { "memory": 256, "maxDuration": 10 }
   },
   "headers": [
     {
