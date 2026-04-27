@@ -380,22 +380,23 @@ async function fetchExplain(pred){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({verdict:pred.verdict,confidence:pred.confidence,filename:selectedFile?selectedFile.name:'image.jpg'})
     });
-    const d=await r.json();
     const body=document.getElementById('aiBody');
     if(!body)return;
+    if(r.status===503){
+      body.innerHTML=`<div class="ai-row" style="color:var(--faint)">AI analysis unavailable — GROQ_API_KEY not configured.</div>`;
+      return;
+    }
+    const d=await r.json();
     body.innerHTML=`
       <div class="ai-row"><strong>🔍 What it is</strong>${d.explanation}</div>
       <div class="ai-row"><strong>⚙ Likely cause</strong>${d.likely_cause}</div>
       <div class="ai-row"><strong>✅ Recommendation</strong>${d.recommendation}</div>`;
     const card=document.getElementById('aiCard');
-    if(d.demo_mode){
-      const dn=document.createElement('div');
-      dn.className='ai-demo-note';
-      dn.textContent='(illustrative — Groq not configured)';
-      if(card)card.appendChild(dn);
-    }
     if(window.gsap&&card){gsap.from(card,{opacity:0,y:10,duration:.4})}
-  }catch(e){}
+  }catch(e){
+    const body=document.getElementById('aiBody');
+    if(body)body.innerHTML=`<div class="ai-row" style="color:var(--faint)">AI analysis unavailable.</div>`;
+  }
 }
 
 function showError(msg){

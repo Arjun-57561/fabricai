@@ -5,3 +5,11 @@ webapp/
 **/*.pyc
 .env
 *.bat
+dev_server.py
+scripts/
+requirements.local.txt
+requirements.vercel.txt
+*.pth
+*.pt
+*.ckpt
+.git/

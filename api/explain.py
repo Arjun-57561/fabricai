@@ -38,7 +38,7 @@ def explain():
 
     api_key = os.environ.get('GROQ_API_KEY', '')
     if not api_key:
-        return jsonify(FALLBACK_RESPONSES.get(verdict, FALLBACK_RESPONSES["NORMAL"]))
+        return jsonify({"error": "GROQ_API_KEY not configured"}), 503
 
     try:
         from groq import Groq
