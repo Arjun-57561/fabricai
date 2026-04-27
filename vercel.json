@@ -8,9 +8,9 @@
     { "src": "/api/model-info",       "dest": "api/model_info.py" },
     { "src": "/api/synthetic-sample", "dest": "api/synthetic_sample.py" },
     { "src": "/api/explain",          "dest": "api/explain.py" },
-    { "src": "/analytics",            "dest": "public/analytics.html" },
-    { "src": "/architecture",         "dest": "public/architecture.html" },
-    { "src": "/(.*)",                 "dest": "public/index.html" }
+    { "src": "/analytics",            "dest": "/public/analytics.html" },
+    { "src": "/architecture",         "dest": "/public/architecture.html" },
+    { "src": "/(.*)",                 "dest": "/public/index.html" }
   ],
   "functions": {
     "api/predict.py":       { "memory": 1024, "maxDuration": 30 },
